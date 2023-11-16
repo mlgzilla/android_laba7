@@ -1,7 +1,11 @@
 package com.example.laba2;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -10,8 +14,37 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class SettingsActivity extends AppCompatActivity {
+    Context context = this;
+
     String userLogin;
-    DatabaseHandler db = new DatabaseHandler(this);
+
+    Button submitButton;
+    Button deleteButton;
+    Button backButton;
+    EditText passwdText;
+
+    Intent authIntent;
+    Intent listIntent;
+
+
+    final Looper looper = Looper.getMainLooper();
+
+    final Handler handler = new Handler(looper) {
+        @Override
+        public void handleMessage(Message msg) {
+
+            if (msg.sendingUid == 1) {
+                Toast.makeText(SettingsActivity.this, (String)msg.obj, Toast.LENGTH_LONG).show();
+                submitButton.setEnabled(true);
+            }
+
+            if (msg.sendingUid == 2) {
+                startActivity(authIntent);
+                deleteButton.setEnabled(true);
+            }
+        }
+    };
+
 
     @Override
     protected void onStart() {
@@ -21,13 +54,13 @@ public class SettingsActivity extends AppCompatActivity {
         Bundle arguments = getIntent().getExtras();
         userLogin = arguments.get("userLogin").toString();
 
-        Button submitButton = findViewById(R.id.submitButton);
-        Button deleteButton = findViewById(R.id.deleteButton);
-        Button backButton = findViewById(R.id.backButton);
+        submitButton = findViewById(R.id.submitButton);
+        deleteButton = findViewById(R.id.deleteButton);
+        backButton = findViewById(R.id.backButton);
 
-        EditText passwdText = findViewById(R.id.editTextPassword);
-        Intent authIntent = new Intent(this, AuthActivity.class);
-        Intent listIntent = new Intent(this, ListActivity.class);
+        passwdText = findViewById(R.id.editTextPassword);
+        authIntent = new Intent(this, AuthActivity.class);
+        listIntent = new Intent(this, ListActivity.class);
 
         Toast myToast = new Toast(this);
 
@@ -35,35 +68,16 @@ public class SettingsActivity extends AppCompatActivity {
         submitButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        passwdText.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                String newPass = passwdText.getText().toString();
-                                if (!newPass.equals("")) {
-                                    db.updatePass(db.findByLogin(userLogin), newPass);
-                                    Toast.makeText(SettingsActivity.this, "Pass was changed.", Toast.LENGTH_LONG).show();
-                                } else
-                                    Toast.makeText(SettingsActivity.this, "Pass cant be empty.", Toast.LENGTH_LONG).show();
-                            }
-                        });
-                    }
-                }).start();
+                submitButton.setEnabled(false);
+                new ThreadTask(handler, context).updatePass(userLogin, passwdText.getText().toString());
             }
         });
 
         deleteButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        db.removeUser(userLogin);
-                        startActivity(authIntent);
-                    }
-                }).start();
+                deleteButton.setEnabled(false);
+                new ThreadTask(handler, context).removeUser(userLogin);
             }
         });
 
@@ -74,11 +88,5 @@ public class SettingsActivity extends AppCompatActivity {
                 startActivity(listIntent);
             }
         });
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        db.close();
     }
 }
