@@ -12,6 +12,9 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class AuthActivity extends AppCompatActivity {
     Context context = this;
 
@@ -60,21 +63,38 @@ public class AuthActivity extends AppCompatActivity {
         regButton = findViewById(R.id.regButton);
         loginText = findViewById(R.id.editTextLogin);
         passwdText = findViewById(R.id.editTextPassword);
-        Toast myToast = new Toast(this);
 
+        Toast myToast = new Toast(this);
+        ThreadTask threadTask = new ThreadTask(handler, context);
 
         submitButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 submitButton.setEnabled(false);
-                new ThreadTask(handler, context).loginUser(loginText.getText().toString(), passwdText.getText().toString());
+
+                ArrayList<String> list = new ArrayList<>();
+                list.add(loginText.getText().toString());
+                list.add(passwdText.getText().toString());
+
+                Message message = Message.obtain();
+                message.obj = list;
+                message.sendingUid = 1;
+                threadTask.handler.sendMessage(message);
             }
         });
         regButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 regButton.setEnabled(false);
-                new ThreadTask(handler, context).regUser(loginText.getText().toString(), passwdText.getText().toString());
+
+                ArrayList<String> list = new ArrayList<>();
+                list.add(loginText.getText().toString());
+                list.add(passwdText.getText().toString());
+
+                Message message = Message.obtain();
+                message.obj = list;
+                message.sendingUid = 2;
+                threadTask.handler.sendMessage(message);
             }
         });
     }

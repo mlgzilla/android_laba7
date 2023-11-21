@@ -13,6 +13,8 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.util.ArrayList;
+
 public class SettingsActivity extends AppCompatActivity {
     Context context = this;
 
@@ -63,13 +65,22 @@ public class SettingsActivity extends AppCompatActivity {
         listIntent = new Intent(this, ListActivity.class);
 
         Toast myToast = new Toast(this);
+        ThreadTask threadTask = new ThreadTask(handler, context);
 
 
         submitButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 submitButton.setEnabled(false);
-                new ThreadTask(handler, context).updatePass(userLogin, passwdText.getText().toString());
+
+                ArrayList<String> list = new ArrayList<>();
+                list.add(userLogin);
+                list.add(passwdText.getText().toString());
+
+                Message message = Message.obtain();
+                message.obj = list;
+                message.sendingUid = 3;
+                threadTask.handler.sendMessage(message);
             }
         });
 
@@ -77,7 +88,11 @@ public class SettingsActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 deleteButton.setEnabled(false);
-                new ThreadTask(handler, context).removeUser(userLogin);
+
+                Message message = Message.obtain();
+                message.obj = userLogin;
+                message.sendingUid = 4;
+                threadTask.handler.sendMessage(message);
             }
         });
 
